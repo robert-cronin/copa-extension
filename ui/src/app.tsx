@@ -56,7 +56,20 @@ export function App() {
   const [totalOutput, setTotalOutput] = useState("");
   const [errorText, setErrorText] = useState("");
   const [useContainerdChecked, setUseContainerdChecked] = useState(false);
-  const [latestCopaVersion, setLatestCopaVerison] = useState("v0.7.0");
+  const [latestCopaVersion, setLatestCopaVerison] = useState("v0.12.0");
+
+  // New flags for v0.11.1+ features
+  const [pushToRegistry, setPushToRegistry] = useState<boolean>(false);
+  const [exitOnEol, setExitOnEol] = useState<boolean>(false);
+  const [eolApiUrl, setEolApiUrl] = useState<string>("default");
+  const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
+  const [ignoreErrors, setIgnoreErrors] = useState<boolean>(false);
+  const [progressMode, setProgressMode] = useState<string>("auto");
+
+  // New flags for v0.12.0 features
+  const [ociDir, setOciDir] = useState<string>("");
+  const [pkgTypes, setPkgTypes] = useState<string>("os");
+  const [libraryPatchLevel, setLibraryPatchLevel] = useState<string>("patch");
 
   const [inSettings, setInSettings] = useState(false);
   const [showPreload, setShowPreload] = useState(true);
@@ -143,6 +156,15 @@ export function App() {
     setSelectedScanner("trivy");
     setSelectedImageTag("");
     setSelectedTimeout("5m");
+    setPushToRegistry(false);
+    setExitOnEol(false);
+    setEolApiUrl("default");
+    setSelectedPlatform("all");
+    setIgnoreErrors(false);
+    setProgressMode("auto");
+    setOciDir("");
+    setPkgTypes("os");
+    setLibraryPatchLevel("patch");
     setVulnerabilityCount({
       "UNKNOWN": 0,
       "LOW": 0,
@@ -194,9 +216,11 @@ export function App() {
       `${TRIVY_CONTAINER_NAME}`,
       "aquasec/trivy",
       "image",
-      "--vuln-type",
-      "os",
+      "--pkg-types",
+      pkgTypes,  // Use dynamic package types (os, library, or os,library)
       "--ignore-unfixed",
+      "--scanners",
+      "vuln",
       "--format",
       "json",
       "-o",
@@ -243,7 +267,17 @@ export function App() {
         `${getImageTag()}`,
         `${selectedTimeout === undefined ? "5m" : selectedTimeout}`,
         `${useContainerdChecked ? 'custom-socket' : 'buildx'}`,
-        "openvex"
+        "openvex",
+        "",  // output_file (empty for now)
+        `${pushToRegistry}`,
+        `${exitOnEol}`,
+        `${eolApiUrl}`,
+        `${selectedPlatform}`,
+        `${ignoreErrors}`,
+        `${progressMode}`,
+        `${ociDir}`,  // v0.12.0: OCI directory
+        `${pkgTypes}`,  // v0.12.0: Package types
+        `${libraryPatchLevel}`  // v0.12.0: Library patch level
       ];
       ({ stdout, stderr } = await runCopa(commandParts, stdout, stderr));
     }
@@ -494,6 +528,24 @@ export function App() {
             getTrivyOutput={getTrivyOutput}
             vulnState={vulnState}
             setVulnState={setVulnState}
+            pushToRegistry={pushToRegistry}
+            setPushToRegistry={setPushToRegistry}
+            exitOnEol={exitOnEol}
+            setExitOnEol={setExitOnEol}
+            eolApiUrl={eolApiUrl}
+            setEolApiUrl={setEolApiUrl}
+            selectedPlatform={selectedPlatform}
+            setSelectedPlatform={setSelectedPlatform}
+            ignoreErrors={ignoreErrors}
+            setIgnoreErrors={setIgnoreErrors}
+            progressMode={progressMode}
+            setProgressMode={setProgressMode}
+            ociDir={ociDir}
+            setOciDir={setOciDir}
+            pkgTypes={pkgTypes}
+            setPkgTypes={setPkgTypes}
+            libraryPatchLevel={libraryPatchLevel}
+            setLibraryPatchLevel={setLibraryPatchLevel}
           />}
         {showLoading && loadingPage}
         {showSuccess && successPage}
